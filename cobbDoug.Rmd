@@ -1,7 +1,7 @@
 ---
 title: "CobbDouglas"
-author: "Dr. J"
-date: "4/24/2020"
+author: "Jaime Duran"
+date: "5/11/2020"
 output: html_document
 ---
 
@@ -11,8 +11,8 @@ This Rmarkdown file demonstrates techniques for non-linear optimization, and is 
 
 ### Methods demonstrated:
  1. Grid search of space of parameters  
- 2. non-linear optimization software, find values of the parameters that minimize the sum of squared errors, errors are (data-predicted)  
- 3. non-linear optimizatin software, maximum likelihood- find values of the parameters that maximize the likelihood of the data assuming errors are normally distributed  
+ 2. non-linear optimization software, find values of the parameters that minimize the sum of squared errors, errors are (data-predicted vs actual data)
+ 3. non-linear optimization software, maximum likelihood- find values of the parameters that maximize the likelihood of the data assuming errors are normally distributed  
  4. log-transform to a linear model  
  
 ```{r setup, include=FALSE}
@@ -35,11 +35,6 @@ grid()
 ```
 
 A two-dimensional plot would be nice..
-
-```{r}
-
-```
-
 Set up a non-linear loss function
 
 ```{r}
@@ -87,6 +82,7 @@ beta = 0.8
 parms=c(A, alpha, beta)
 print(CDloss(parms, Q, Cap, Emp))
 ```
+
 ## Grid search
   not the best idea, can get close to an answer 
 
@@ -100,6 +96,8 @@ for (A in seq(from=0.01, to = 2, length.out = 4))
   }
 
 ```
+
+] "1.33666666666667 0.604 0.406          14.2090301971589"
 
 ## non linear optimization
 
@@ -129,12 +127,12 @@ parms = c(2, 0.8, 0.2)
 opt = optim(parms, CDmle, Q=Q, Cap=Cap, Emp=Emp)
 print(opt)
 parms = c(opt$par[1], opt$par[2], opt$par[3])
+print(CDmle(parms, Q, Cap,Emp))
 print(CDloss(parms, Q, Cap,Emp))
 ```
 
 
-
-## transform to logs
+## transform to logs to get standard error for coefficients.
 
 ```{r}
 logModel = glm(log(Q)~log(Cap)+log(Emp))
@@ -149,9 +147,45 @@ parms=c(A, alpha, beta)
 print(paste('CD loss: ', CDloss(parms, Q, Cap, Emp)))
 ```
 
+$$log(Q) = 0.54 + 0.23*log(K) * 0.77*log(L)$$
+
+
+## exponentiating
+$$Q= exp(0.54)*K^{0.23}*L^{0.77}$$
+
+
+
+
 ## Questions:
 1 what are the estimated values of A, alpha and beta
-2 confidence intervals on A, alpha, beta?
-3 is production at constant return to scale? If production is increasing or decreasing return to scale, which input is most expensive
-4. What does the values of A mean??
+  a. A, the efficiency term is is rounded to 0.54, alpha is 0.23, and beta is 0.77. We found the values by unpacking the the antilog of the final log equation. 
+  $$ A = 1.72 , \alpha= 0.23, \beta= 0.77$$
+  
+2. confidence intervals on A, alpha, beta?
+    a. Using the information from the linear model, which produced estimates for the three variables, we can calculate CI for each variable easily. estimatedvalue plusorminus standard error
 
+confidence interval for $\A$:log(A)$\pm$ 1.96*0.15 
+  exponentiate: exp(log(A))= A$\pm$*0.15
+  confidence interval for log(A): log(A)=$\pm$1.96*0.15
+  log(A)=0.54
+  CI for $A$ = (exp(0.54), exp(0.82)) = (1.28, 2.27)
+  UCL= 2.1
+  LCL= 0.46
+  
+confidence interval for $\alpha$:0.23$\pm$ 1.96*.03
+  CI for $\alpha$ =  (exp(0.23), exp(0.82)) = (1.25 , 2.27)
+  UCL= 3.52
+  LCL= -1.02
+  
+confidence interval for $\beta$:0.77$\pm$ 1.96*.03
+  CI for $\beta$ = (exp(0.77), exp(0.82)) = (2.15 , 2.27)
+  UCL= 4.42
+  LCL=-0.12
+  
+3. is production at constant return to scale? If production is increasing or decreasing return to scale, which input is most expensive
+  Producion is at increasing return to scale, and employment is the most expensive input because it has the highest range of possible values according to its estimated Upper confidence level. 
+  
+4. What does the values of A mean??
+  $A$=exp(0.54) 
+  $A$=1.72
+  A is a constant variable that can be studied to see if there has been a significant impact as other variables are manipulated/changed. 
